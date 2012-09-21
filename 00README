@@ -1,0 +1,37 @@
+0.1: my first gem ever. Porting perl code over.
+
+Author attribution to mike.patterson@uwaterloo.ca, as it's work code.
+
+
+=begin rdoc
+== What is this library for?
+
+This library provides a Ruby interface to a MySQL database and some helper
+functions to write your own reports.
+
+== Requirements
+
+You'll need to also have the mysql and parseconfig gems installed.
+
+== CAVEAT
+
+I'm a terrible programmer and a newbie Ruby coder to boot. Let me know how to
+fix things.
+
+== Examples
+
+You need to get a SnortDB instance and then call things against it.
+		require 'snort_report'
+		SnortDB = snortreport.connect("some crap")
+
+== But I don't use MySQL
+
+Then you've not tried any of the other reporting tools; they tend only to
+support MySQL. Sorry. I hate it too. Code patches or bug reports for nonMySQL
+DBs are welcome.
+
+== License
+
+BSD-new.
+
+=end
