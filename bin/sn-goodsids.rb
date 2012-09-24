@@ -7,7 +7,7 @@
 require 'snort_report'
 require 'mysql2'
 
-debug = 2
+debug = 0
 
 if(ARGV[0])
 	checkdate = ARGV[0]
