@@ -7,4 +7,10 @@ class Snort_report
 		myc = ParseConfig.new(cname)
 		return myc
 	end
+
+	def self.ydate
+		tdate = DateTime.now
+		tdate -= 1
+		return tdate.strftime('%Y-%m-%d')
+	end
 end
