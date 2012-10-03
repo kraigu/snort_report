@@ -19,7 +19,7 @@
 require 'snort_report'
 require 'mysql2'
 
-debug = 1
+debug = 0
 
 if( !(ARGV[0]) )
 	abort "Search for which SID?"
@@ -64,4 +64,22 @@ if (debug > 0)
 		p row
 	end
 end
-# Here endeth the script, busted.
+
+sql = %Q|SELECT e.cid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
+	sig_name as sidn,sig_rev as sidr
+	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid
+	WHERE s.sig_sid = #{ssid} AND e.timestamp LIKE '#{sdate}%' ORDER BY timestamp;|
+if(debug > 0)
+	p sql
+end
+begin
+	results = dbc.query(sql)
+rescue
+	abort("#{sql} query died")
+end
+
+#output is still kind of rough, waiting on a pretty-print method
+results.each(:as => :array) do |row|
+	p row
+end
+
