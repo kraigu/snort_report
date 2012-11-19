@@ -133,7 +133,7 @@ end
 
 puts "Sequence: #{pdata["seq"]}\n"
 puts "Timestamp: #{pdata["ts"]}\n"
-puts "Signature: #{pdata["sid"]} Rev #{pdata["srev"]} (GID #{pdata["gid"]})| #{pdata["desc"]}\n"
+puts "Signature: #{pdata["sid"]} Rev #{pdata["srev"]} (GID #{pdata["gid"]}) | #{pdata["desc"]}\n"
 puts "Source: #{pdata["sip"]}:#{pdata["sport"]}\n"
 puts "Destination: #{pdata["dip"]}:#{pdata["dport"]}\n"
 puts "Decoded payload (#{pdata["proto"]}):\n----\n"
