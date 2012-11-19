@@ -32,11 +32,20 @@ dbc = Mysql2::Client.new(
 # First find out if we need TCP, UDP, or ICMP
 sql = %Q|SELECT ip_proto FROM iphdr JOIN event on iphdr.cid = event.cid
 WHERE iphdr.cid = '#{snum}';|
+if( debug > 0 )
+	puts" SQL 1 is\n#{sql}\n"
+end
+stime = Time.now
 begin
 	results = dbc.query(sql)
 rescue
 	abort("IP protocol query died\n#{sql}")
 end
+dtime = Time.now - stime
+if( debug > 1 )
+	puts "Query took #{dtime} seconds\n"
+end
+
 proto = 0
 results.each(:as => :array) do |row|
 	proto = row[0]
@@ -50,7 +59,7 @@ if (!( (proto == 1) || (proto == 6) || (proto == 17) ) )
 end
 
 # Now get the actual data. Start setting up common parts.
-sql = %Q|SELECT e.cid,e.timestamp,sig_name,sig_sid,sig_rev,INET_NTOA(ip_src),INET_NTOA(ip_dst),
+sql = %Q|SELECT e.cid,e.timestamp,sig_name,sig_gid,sig_sid,sig_rev,INET_NTOA(ip_src),INET_NTOA(ip_dst),
 |
 
 pdata["proto"] = "none"
@@ -87,22 +96,29 @@ if debug > 0
 	puts "SQL for 2:\n#{sql}\n"
 end
 
+stime = Time.now
 begin
 	results = dbc.query(sql)
 rescue
 	abort("Final query died\n#{sql}")
+end
+dtime = Time.now - stime
+
+if ( debug > 1 )
+	puts "Query took #{dtime} seconds\n"
 end
 
 results.each(:as => :array) do |row|
 	pdata["seq"] = row[0]
 	pdata["ts"] = row[1]
 	pdata["desc"] = row[2]
-	pdata["sid"] = row[3]
-	pdata["srev"] = row[4]
-	pdata["sip"] = row[5]
-	pdata["dip"] = row[6]
-	pdata["sport"] = row[7]
-	pdata["dport"] = row[8]
+	pdata["gid"] = row[3]
+	pdata["sid"] = row[4]
+	pdata["srev"] = row[5]
+	pdata["sip"] = row[6]
+	pdata["dip"] = row[7]
+	pdata["sport"] = row[8]
+	pdata["dport"] = row[9]
 end
 
 sql = %Q|SELECT data_payload FROM data WHERE cid = '#{snum}';|
@@ -117,7 +133,7 @@ end
 
 puts "Sequence: #{pdata["seq"]}\n"
 puts "Timestamp: #{pdata["ts"]}\n"
-puts "Signature: #{pdata["sid"]} Rev #{pdata["srev"]} | #{pdata["desc"]}\n"
+puts "Signature: #{pdata["sid"]} Rev #{pdata["srev"]} (GID #{pdata["gid"]})| #{pdata["desc"]}\n"
 puts "Source: #{pdata["sip"]}:#{pdata["sport"]}\n"
 puts "Destination: #{pdata["dip"]}:#{pdata["dport"]}\n"
 puts "Decoded payload (#{pdata["proto"]}):\n----\n"
