@@ -78,8 +78,9 @@ rescue
 	abort("#{sql} query died")
 end
 
-#output is still kind of rough, waiting on a pretty-print method
+# some machinations to make output match sn-goodsids - eventually I'll make an alert class
+# with a prettyprint method
 results.each(:as => :array) do |row|
-	p row
+	puts "#{row[1]}\t#{row[0]}\t#{ssid}\t#{row[5]}\t#{row[2]}\t#{row[3]}\t#{row[4]}"
 end
 
