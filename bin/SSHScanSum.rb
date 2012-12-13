@@ -1,7 +1,11 @@
 #!/usr/bin/env ruby
 
 # /etc/networks had better exist and be useful
-# Input should be a file output from FindSSHScanners.pl, that is:
+#  or you need a copy of it elsewhere, stipulated with the -n argument
+# Useful means
+# network name\tnetwork address\t# network owner CIDRmask
+# ie foo.net 192.168.0.0 # somebody /23
+# Input should be a file output from a run of sn-findssh, that is:
 # quote delimited, comma separated text file format:
 # "Source IP","Destination IP","timestamp"
 # must be sorted by timestamp
@@ -41,6 +45,14 @@ optparse = OptionParser.new do |opts|
 	opts.on('-c','--cutoff NUM',Integer,"Cutoff value") do |c|
 		options[:cutoff] = c
 	end
+	options[:netfile] = "/etc/networks"
+	opts.on('-n','--network FILE',"networks file") do |netfile|
+		options[:netfile] = netfile
+	end
+	options[:verbose] = 0
+	opts.on('-v','--verbose NUM',Integer,"Verbosity") do |v|
+		options[:verbose] = v
+	end
 	opts.on('-h','--help') do
 		puts opts
 		exit
@@ -48,6 +60,7 @@ optparse = OptionParser.new do |opts|
 end
 
 optparse.parse!
+$debug = options[:verbose]
 
 RNCIDRs = [ ]
 # Blank array to hold our list of CIDRs for ResNet
@@ -59,7 +72,10 @@ BadActors = {}
 ## FUNCTIONS
 def parseRN(line)
 	tmpl = line.split("\s")
-	return tmpl[1] + tmpl[5]
+	if($debug > 1)
+		p tmpl
+	end
+	return tmpl[1] + tmpl[4]
 end
 
 def checkRN(arg)
@@ -82,7 +98,7 @@ end
 
 ## MAIN
 # Read in and parse the networks file to find ResNet ranges
-netfile = File.new("/etc/networks", "r")
+netfile = File.new(options[:netfile], "r")
 
 while (netline = netfile.gets)
 	if( (netline.include?"129.97") && ( (netline.include?"rn-") || (netline.include?"RESNET") ) )
