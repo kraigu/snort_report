@@ -2,7 +2,7 @@
 
 # Retrieve the payload for a given event ID
 # Mike Patterson <mike.patterson@uwaterloo.ca> in his guise as an ISS staff member at uWaterloo
-# 21 September 2012
+# 21 September 2012 - 14 January 2013
 
 require 'snort_report'
 require 'mysql2'
@@ -22,6 +22,8 @@ if(snum.nil?)
 	abort("Requires a sequence number")
 end
 
+pdata["seq"] = snum;
+
 dbc = Mysql2::Client.new(
 	:host => myc.get_value('client')['host'],
 	:username => myc.get_value('client')['user'],
@@ -29,11 +31,10 @@ dbc = Mysql2::Client.new(
 	:database => myc.get_value('mysql')['database'],
 	)
 
-# First find out if we need TCP, UDP, or ICMP
-sql = %Q|SELECT ip_proto FROM iphdr JOIN event on iphdr.cid = event.cid
-WHERE iphdr.cid = '#{snum}';|
+# First find out if we need TCP, UDP, or ICMP. Get the IP addresses while we're here.
+sql = %Q|SELECT ip_proto,INET_NTOA(ip_src),INET_NTOA(ip_dst) FROM iphdr WHERE iphdr.cid = '#{snum}';|
 if( debug > 0 )
-	puts" SQL 1 is\n#{sql}\n"
+	puts "Protocol query is\n#{sql}\n"
 end
 stime = Time.now
 begin
@@ -43,12 +44,14 @@ rescue
 end
 dtime = Time.now - stime
 if( debug > 1 )
-	puts "Query took #{dtime} seconds\n"
+	puts "Protocol query took #{dtime} seconds\n"
 end
 
 proto = 0
 results.each(:as => :array) do |row|
 	proto = row[0]
+	pdata["sip"] = row[1]
+	pdata["dip"] = row[2]
 end
 if debug > 0
 	puts "Protocol was #{proto}"
@@ -59,73 +62,88 @@ if (!( (proto == 1) || (proto == 6) || (proto == 17) ) )
 end
 
 # Now get the actual data. Start setting up common parts.
-sql = %Q|SELECT e.cid,e.timestamp,sig_name,sig_gid,sig_sid,sig_rev,INET_NTOA(ip_src),INET_NTOA(ip_dst),
-|
+# This used to be a massive JOIN:
+# SELECT e.cid,e.timestamp,sig_name,sig_gid,sig_sid,sig_rev,INET_NTOA(ip_src),INET_NTOA(ip_dst),
+# (check on protocol but usually) 
+# t.tcp_sport,t.tcp_dport FROM tcphdr t JOIN iphdr i ON t.cid = i.cid JOIN event e ON t.cid = e.cid
+# JOIN signature s ON e.signature = s.sig_id WHERE e.cid = '#{snum}';
+# but joins are dumb with indexes.
+# So instead I'm going to copy and paste code unnecessarily in the interest of current-expediency.
+# Leave me alone, it's after 5 on a Friday.
 
-pdata["proto"] = "none"
-if(proto == 17)
-	sql = sql + %Q|
- u.udp_sport,u.udp_dport
- FROM udphdr u JOIN iphdr i ON u.cid = i.cid
- JOIN event e ON u.cid = e.cid
- |
- pdata["proto"] = "UDP"
-elsif(proto == 6)
-	sql = sql + %Q|
- t.tcp_sport,t.tcp_dport
- FROM tcphdr t JOIN iphdr i ON t.cid = i.cid
- JOIN event e ON t.cid = e.cid
- |
- pdata["proto"] = "TCP"
-else
-	sql = sql + %Q|
- icmp.icmp_type,icmp.icmp_code
- FROM icmphdr icmp JOIN iphdr i ON icmp.cid = i.cid
- JOIN event e on i.cid = e.cid
- |
- pdata["proto"] = "ICMP"
+sql = %Q|SELECT timestamp,signature FROM event WHERE cid = #{snum};|
+if(debug > 0)
+	puts "Events query sql is\n#{sql}\n"
 end
-
-sql = sql + %Q|
- JOIN signature s
- ON e.signature = s.sig_id
- WHERE e.cid = '#{snum}';
-|
-
-if debug > 0
-	puts "SQL for 2:\n#{sql}\n"
-end
-
 stime = Time.now
 begin
 	results = dbc.query(sql)
 rescue
-	abort("Final query died\n#{sql}")
+	abort("Events query died\n#{sql}")
 end
 dtime = Time.now - stime
-
-if ( debug > 1 )
-	puts "Query took #{dtime} seconds\n"
+if( debug > 1 )
+	puts "Events query took #{dtime} seconds\n"
+end
+results.each(:as => :array) do |row|
+	pdata["ts"] = row[0]
+	pdata["esig"] = row[1]
 end
 
+sql = %Q|SELECT sig_name,sig_gid,sig_sid,sig_rev FROM signature WHERE sig_id = #{pdata["esig"]};|
+stime = Time.now
+begin
+	results = dbc.query(sql)
+rescue
+	abort("Signature query died\n#{sql}")
+end
+dtime = Time.now - stime
+if( debug > 1 )
+	puts "Signature query took #{dtime} seconds\n"
+end
 results.each(:as => :array) do |row|
-	pdata["seq"] = row[0]
-	pdata["ts"] = row[1]
-	pdata["desc"] = row[2]
-	pdata["gid"] = row[3]
-	pdata["sid"] = row[4]
-	pdata["srev"] = row[5]
-	pdata["sip"] = row[6]
-	pdata["dip"] = row[7]
-	pdata["sport"] = row[8]
-	pdata["dport"] = row[9]
+	pdata["desc"] = row[0]
+	pdata["gid"] = row[1]
+	pdata["sid"] = row[2]
+	pdata["srev"] = row[3]
+end	
+
+pdata["proto"] = "none"
+if(proto == 17)
+        sql = %Q|SELECT udp_sport,udp_dport FROM udphdr WHERE cid = #{snum};|
+        pdata["proto"] = "UDP"
+elsif(proto == 6)
+        sql = %Q|SELECT tcp_sport,tcp_dport FROM tcphdr WHERE cid = #{snum};|
+		pdata["proto"] = "TCP"
+else
+        sql = %Q|SELECT icmp_type,icmp_code FROM icmphdr WHERE cid = #{snum};|
+		pdata["proto"] = "ICMP"
+end
+stime = Time.now
+begin
+	results = dbc.query(sql)
+rescue
+	abort("Ports query died\n#{sql}")
+end
+dtime = Time.now - stime
+if( debug > 1 )
+	puts "Ports query took #{dtime} seconds\n"
+end
+results.each(:as => :array) do |row|
+	pdata["sport"] = row[0]
+	pdata["dport"] = row[1]
 end
 
 sql = %Q|SELECT data_payload FROM data WHERE cid = '#{snum}';|
+stime = Time.now
 begin
 	results = dbc.query(sql)
 rescue
 	abort("Payload query died\n#{sql}")
+end
+dtime = Time.now - stime
+if( debug > 1 )
+	puts "Payload query took #{dtime} seconds\n"
 end
 results.each(:as => :array) do |row|
 	pdata["payload"] = row[0].scan(/../).map { |pair| pair.hex.chr }.join
