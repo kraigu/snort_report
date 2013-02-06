@@ -43,12 +43,7 @@ if(debug > 0)
 	puts "Searching for #{ssid} on #{sdate}\n"
 end
 
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
 
 # get the internal signature IDs of the snort SID that was requested.
 # this is to save a join later.
