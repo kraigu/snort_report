@@ -30,6 +30,10 @@ optparse = OptionParser.new do |opts|
 	opts.on('-s','--all-SID',"All SID number") do
 		options[:SID] = true
 	end
+	options[:filename] = nil
+	opts.on('-f','--filename FILE',"Input config file") do |file|
+		options[:filename] = file
+	end
 	options[:sdate] = false
 	opts.on('-d','--date',"Searching data on the date") do
 		options[:sdate] = true
@@ -48,7 +52,12 @@ else
 end
 
 begin
-	myc = Snort_report.parseconfig
+	if(options[:filename])
+	    file = options[:filename]
+        myc= Snort_report.parseconfig(:a => file)
+    else
+        myc = Snort_report.parseconfig
+    end
 rescue
 	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
