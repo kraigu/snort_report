@@ -1,11 +1,16 @@
 require 'parseconfig'
 
 class Snort_report
-	def self.parseconfig
-		cname = (ENV['HOME'] + "/.my.cnf")
-		# TODO check permissions on the .my.cnf file, should require 0400 or 0600
-		myc = ParseConfig.new(cname)
-		return myc
+	def self.parseconfig(opts={})
+	    o = {
+                :a =>(ENV['HOME'] + "/.srrc"),
+            }.merge(opts)
+        cname = "#{o[:a]}" 
+        permission = File.stat(cname).mode.to_s(8)[2..5]
+		if(permission == '0600' or permission == '0400') 
+		  myc = ParseConfig.new(cname)
+		  return myc
+		end
 	end
 
 	def self.ydate
@@ -13,7 +18,7 @@ class Snort_report
 		tdate -= 1
 		return tdate.strftime('%Y-%m-%d')
 	end
-
+	
 	def self.sqlconnect(myc)
 		dbc = Mysql2::Client.new(
 			:host => myc.get_value('client')['host'],
@@ -24,3 +29,4 @@ class Snort_report
 		return dbc
 	end
 end
+
