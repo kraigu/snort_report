@@ -18,13 +18,33 @@
 
 require 'snort_report'
 require 'mysql2'
+require 'optparse'
 
 debug = 0
 
-if( !(ARGV[0]) )
-	abort "Search for which SID?"
+options = {}
+
+optparse = OptionParser.new do |opts|
+	opts.banner = "Usage:"
+	options[:SID] = false
+	opts.on('-s','--all-SID',"All SID number") do
+		options[:SID] = true
+	end
+	options[:sdate] = false
+	opts.on('-d','--date',"Searching data on the date") do
+		options[:sdate] = true
+	end
+	opts.on('-h','--help') do
+		puts opts
+		exit
+	end
+end
+
+optparse.parse!
+if(!(options[:SID]))
+    abort "Search for which SID?"
 else
-	ssid = ARGV[0]
+    ssid = options[:SID]
 end
 
 begin
@@ -33,22 +53,17 @@ rescue
 	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
 
-if(ARGV[1])
-	sdate = ARGV[1]
+if(options[:sdate])
+    sdate = options[:sdate]
 else
-	sdate = DateTime.now.strftime('%Y-%m-%d')
-end
+    sdate = DateTime.now.strftime('%Y-%m-%d')
+end	
 
 if(debug > 0)
 	puts "Searching for #{ssid} on #{sdate}\n"
 end
 
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
 
 # get the internal signature IDs of the snort SID that was requested.
 # this is to save a join later.
@@ -83,4 +98,3 @@ end
 results.each(:as => :array) do |row|
 	puts "#{row[1]}\t#{row[0]}\t#{ssid}\t#{row[5]}\t#{row[2]}\t#{row[3]}\t#{row[4]}"
 end
-
