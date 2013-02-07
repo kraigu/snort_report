@@ -16,6 +16,10 @@ optparse = OptionParser.new do |opts|
 	opts.on('-w','--warning NUM',Integer,"Warning value in seconds") do |w|
 		options[:warn] = w
 	end
+	options[:filename] = nil
+	opts.on('-f','--filename FILE',"Input config file") do |file|
+		options[:filename] = file
+	end
 	options[:critical] = 300
 	opts.on('-c','--critical NUM',Integer,"Critical value in seconds") do |c|
 		options[:critical] = c
@@ -39,17 +43,17 @@ if(verbose) > 0
 end
 
 begin
-	myc = Snort_report.parseconfig
+	if(options[:filename])
+	    file = options[:filename]
+        myc= Snort_report.parseconfig(:a => file)
+    else
+        myc = Snort_report.parseconfig
+    end
 rescue
 	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
 
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
 
 sql = %Q|SELECT max(timestamp) AS mts FROM event;|
 

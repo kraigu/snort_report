@@ -6,30 +6,56 @@
 
 require 'snort_report'
 require 'mysql2'
+require 'optparse'
 
-debug = 0
+options = {}
+
+optparse = OptionParser.new do |opts|
+	opts.banner = "Usage:"
+	options[:filename] = nil
+	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+		options[:filename] = file	
+	end
+	options[:seq] = false
+	opts.on('-d','--sequence NUM',"Sequence Number ") do |s|
+		options[:seq] = s
+	end	
+	options[:verbose] = 0
+	opts.on('-v','--verbose NUM',Integer,"Verbosity(Debug)") do |v|
+		options[:verbose] = v
+	end
+	opts.on('-h','--help') do
+		puts opts
+		exit
+	end
+end
+
+optparse.parse!
+
+debug = options[:verbose]
 
 begin
-	myc = Snort_report.parseconfig
+	if(options[:filename])
+	    file = options[:filename]
+        myc= Snort_report.parseconfig(:a => file)
+    else
+        myc = Snort_report.parseconfig
+    end
 rescue
 	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
 
 pdata = Hash.new
 
-snum = ARGV.shift
-if(snum.nil?)
-	abort("Requires a sequence number")
+if(!(options[:seq]))
+    abort "Requires a sequence number"
+else
+    snum = options[:seq]
 end
 
 pdata["seq"] = snum;
 
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
 
 # First find out if we need TCP, UDP, or ICMP. Get the IP addresses while we're here.
 sql = %Q|SELECT ip_proto,INET_NTOA(ip_src),INET_NTOA(ip_dst) FROM iphdr WHERE iphdr.cid = '#{snum}';|

@@ -6,17 +6,47 @@
 
 require 'snort_report'
 require 'mysql2'
+require 'optparse'
 
-debug = 0
+options = {}
 
-if(ARGV[0])
-	checkdate = ARGV[0]
+optparse = OptionParser.new do |opts|
+	opts.banner = "Usage:"
+	options[:filename] = nil
+	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+		options[:filename] = file	
+	end
+	options[:sdate] = false
+	opts.on('-d','--date NUM',"Searching data on the date or default to now") do |date|
+		options[:sdate] = date
+	end	
+	options[:verbose] = 0
+	opts.on('-v','--verbose NUM',Integer,"Verbosity(Debug)") do |v|
+		options[:verbose] = v
+	end
+	opts.on('-h','--help') do
+		puts opts
+		exit
+	end
+end
+
+optparse.parse!
+
+debug = options[:verbose]
+
+if(options[:sdate])
+	checkdate = options[:sdate]
 else
 	checkdate = DateTime.now.strftime('%Y-%m-%d')
 end
 
 begin
-	myc = Snort_report.parseconfig
+	if(options[:filename])
+	    file = options[:filename]
+        myc= Snort_report.parseconfig(:a => file)
+    else
+        myc = Snort_report.parseconfig
+    end
 rescue
 	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
@@ -42,12 +72,7 @@ rescue => err
 	abort "Uh oh SID file: #{err}"
 end
 
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
 
 gsids.each do |csid|
 	sql = %Q|SELECT e.cid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,

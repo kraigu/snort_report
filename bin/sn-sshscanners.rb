@@ -7,23 +7,49 @@
 
 require 'snort_report'
 require 'mysql2'
+require 'optparse'
 
-debug = 0
+options = {}
+
+optparse = OptionParser.new do |opts|
+	opts.banner = "Usage:"
+	options[:filename] = nil
+	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+		options[:filename] = file	
+	end
+	options[:sdate] = false
+	opts.on('-d','--date NUM',"Searching data on the date or default to yesterday") do |date|
+		options[:sdate] = date
+	end	
+	options[:verbose] = 0
+	opts.on('-v','--verbose NUM',Integer,"Verbosity(Debug)") do |v|
+		options[:verbose] = v
+	end
+	opts.on('-h','--help') do
+		puts opts
+		exit
+	end
+end
+
+optparse.parse!
+
+debug = options[:verbose]
 
 begin
-	myc = Snort_report.parseconfig
+	if(options[:filename])
+	    file = options[:filename]
+        myc= Snort_report.parseconfig(:a => file)
+    else
+        myc = Snort_report.parseconfig
+    end
 rescue
 	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
 
-daycheck = (ARGV[0] || Snort_report.ydate) # Default to checking yesterday's data
+daycheck = (options[:sdate] || Snort_report.ydate) # Default to checking yesterday's data
+puts daycheck
 
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
 
 # First get the internal sig_ids for the given SID. There SHOULD be only one, but you never know.
 # Store the results in an array called rids
