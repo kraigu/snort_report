@@ -13,4 +13,14 @@ class Snort_report
 		tdate -= 1
 		return tdate.strftime('%Y-%m-%d')
 	end
+
+	def self.sqlconnect(myc)
+		dbc = Mysql2::Client.new(
+			:host => myc.get_value('client')['host'],
+			:username => myc.get_value('client')['user'],
+			:password => myc.get_value('client')['password'],
+			:database => myc.get_value('mysql')['database'],
+		)
+		return dbc
+	end
 end

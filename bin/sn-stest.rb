@@ -12,12 +12,8 @@ rescue
 end
 
 stime = DateTime.now
-dbc = Mysql2::Client.new(
-	:host => myc.get_value('client')['host'],
-	:username => myc.get_value('client')['user'],
-	:password => myc.get_value('client')['password'],
-	:database => myc.get_value('mysql')['database'],
-	)
+dbc = Snort_report.sqlconnect(myc)
+
 ctime = DateTime.now
 sql = "SELECT COUNT(*) FROM event;"
 
