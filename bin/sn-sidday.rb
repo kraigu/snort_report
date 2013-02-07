@@ -20,23 +20,25 @@ require 'snort_report'
 require 'mysql2'
 require 'optparse'
 
-debug = 0
-
 options = {}
 
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:SID] = false
-	opts.on('-s','--all-SID',"All SID number") do
-		options[:SID] = true
+	opts.on('-s','--all-SID NUM',"All SID number") do |sid|
+		options[:SID] = sid
 	end
 	options[:filename] = nil
 	opts.on('-f','--filename FILE',"Input config file") do |file|
 		options[:filename] = file
 	end
 	options[:sdate] = false
-	opts.on('-d','--date',"Searching data on the date") do
-		options[:sdate] = true
+	opts.on('-d','--date NUM',"Searching data on the date") do |date|
+		options[:sdate] = date
+	end	
+	options[:verbose] = 0
+	opts.on('-v','--verbose NUM',Integer,"Verbosity(Debug)") do |v|
+		options[:verbose] = v
 	end
 	opts.on('-h','--help') do
 		puts opts
@@ -45,6 +47,9 @@ optparse = OptionParser.new do |opts|
 end
 
 optparse.parse!
+
+debug = options[:verbose]
+
 if(!(options[:SID]))
     abort "Search for which SID?"
 else
