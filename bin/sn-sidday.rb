@@ -29,7 +29,7 @@ optparse = OptionParser.new do |opts|
 		options[:SID] = sid
 	end
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file") do |file|
+	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
 		options[:filename] = file
 	end
 	options[:sdate] = false
