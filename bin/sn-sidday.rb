@@ -29,11 +29,11 @@ optparse = OptionParser.new do |opts|
 		options[:SID] = sid
 	end
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file") do |file|
+	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
 		options[:filename] = file
 	end
 	options[:sdate] = false
-	opts.on('-d','--date NUM',"Searching data on the date") do |date|
+	opts.on('-d','--date NUM',"Searching data on the date or default to now") do |date|
 		options[:sdate] = date
 	end	
 	options[:verbose] = 0
