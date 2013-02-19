@@ -16,7 +16,7 @@
 # Another bug: I assume gid = 1. In situations where there is duplication of sids amongst differing gids,
 #  behaviour is undefined but probably bad.
 
-require 'snort_report'
+require 'snort_report.rb'
 require 'mysql2'
 require 'optparse'
 
@@ -25,7 +25,7 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:SID] = false
-	opts.on('-s','--all-SID NUM',"All SID number") do |sid|
+	opts.on('-s','--all-SID NUM',"All SID number,follow the format GID:SID with GID as optional") do |sid|
 		options[:SID] = sid
 	end
 	options[:filename] = nil
@@ -54,6 +54,13 @@ if(!(options[:SID]))
     abort "Search for which SID?"
 else
     ssid = options[:SID]
+	if (ssid =~ /:/)
+	   gid = ssid.split(":").first
+	   ssid = ssid.split(":").last
+	else
+	   gid = 1
+	   ssid = ssid.split(":").last
+	end   
 end
 
 begin
@@ -95,9 +102,10 @@ if (debug > 0)
 end
 
 sql = %Q|SELECT e.cid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
-	sig_name as sidn,sig_rev as sidr
+	sig_name as sidn,sig_rev as sidr,sig_gid as gidr 
 	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid
-	WHERE s.sig_sid = #{ssid} AND e.timestamp LIKE '#{sdate}%' ORDER BY timestamp;|
+	WHERE s.sig_gid = #{gid} AND s.sig_sid = #{ssid} AND e.timestamp LIKE '#{sdate}%' ORDER BY timestamp;|
+
 if(debug > 0)
 	p sql
 end
@@ -110,5 +118,5 @@ end
 # some machinations to make output match sn-goodsids - eventually I'll make an alert class
 # with a prettyprint method
 results.each(:as => :array) do |row|
-	puts "#{row[1]}\t#{row[0]}\t#{ssid}\t#{row[5]}\t#{row[2]}\t#{row[3]}\t#{row[4]}"
+	puts "#{row[1]}\t#{row[0]}\t#{ssid}\t#{row[5]}\t#{row[2]}\t#{row[3]}\t#{row[6]}"
 end
