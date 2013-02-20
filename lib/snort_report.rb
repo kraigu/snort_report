@@ -28,5 +28,12 @@ class Snort_report
 		)
 		return dbc
 	end
+	def self.path
+	    myc = Snort_report.parseconfig
+	    location = myc.get_value('file')['path']
+		return location
+	end	
 end
+
+
 
