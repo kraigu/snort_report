@@ -72,7 +72,7 @@ dbc = Snort_report.sqlconnect(myc)
 
 #randomly create an sequence number for temp table
 num = SecureRandom.base64
-table = "sr_osshtmp_" + num
+table = "sr_findiptmp_" + num
 table = table.gsub(/[^0-9A-Za-z_]/, '')
 
 sql = %Q|CREATE TABLE IF NOT EXISTS #{table} (cid int(10) unsigned PRIMARY KEY,
