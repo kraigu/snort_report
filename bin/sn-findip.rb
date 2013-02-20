@@ -4,9 +4,10 @@
 # Mike Patterson <mike.patterson@uwaterloo.ca> in his guise as an ISS staff member at uWaterloo
 # 21 September 2012
 
-require 'snort_report'
+require '/home/cjshi/snort_report.rb'
 require 'mysql2'
 require 'optparse'
+require 'securerandom'
 
 options = {}
 
@@ -69,23 +70,28 @@ end
 
 dbc = Snort_report.sqlconnect(myc)
 
-sql = %Q|CREATE TABLE IF NOT EXISTS fiptmp (cid int(10) unsigned PRIMARY KEY,
+#randomly create an sequence number for temp table
+num = SecureRandom.base64
+table = "sr_osshtmp_" + num
+table = table.gsub(/[^0-9A-Za-z_]/, '')
+
+sql = %Q|CREATE TABLE IF NOT EXISTS #{table} (cid int(10) unsigned PRIMARY KEY,
 ip_src int(10) unsigned, ip_dst int(10) unsigned);|
 
 begin
 	results = dbc.query(sql)
 rescue
-	abort("Query died at creating fiptmp\n#{sql}")
+	abort("Query died at creating #{table}\n#{sql}")
 end
 
-sql = %Q|DELETE FROM fiptmp;|
+sql = %Q|DELETE FROM #{table};|
 begin
 	results = dbc.query(sql)
 rescue
 	abort("#{sql} query died")
 end
 
-sql = %Q|INSERT INTO fiptmp (cid,ip_src,ip_dst) SELECT cid, ip_src, ip_dst
+sql = %Q|INSERT INTO #{table} (cid,ip_src,ip_dst) SELECT cid, ip_src, ip_dst
 FROM iphdr WHERE ip_src = INET_ATON('#{sip}') OR ip_dst = INET_ATON('#{sip}');|
 
 if debug > 0
@@ -95,13 +101,13 @@ end
 begin
 	results = dbc.query(sql)
 rescue
-	abort("Query died at insert into fiptmp\n#{sql}")
+	abort("Query died at insert into #{table}\n#{sql}")
 end
 
 sql = %Q|SELECT event.cid,event.timestamp,signature.sig_sid,signature.sig_name,
-INET_NTOA(fiptmp.ip_src),INET_NTOA(fiptmp.ip_dst)
+INET_NTOA(#{table}.ip_src),INET_NTOA(#{table}.ip_dst)
 FROM event JOIN signature on event.signature = signature.sig_id
-JOIN fiptmp on event.cid = fiptmp.cid|
+JOIN #{table} on event.cid = #{table}.cid|
 
 if(!checktime.nil?)
 	sql = sql + %Q| WHERE event.timestamp LIKE '#{checktime}%' |
@@ -121,8 +127,8 @@ end
 # want the print order to be timestamp, sequence, sid, source ip, dest ip, message text
 headers = results.fields
 results.each do |row|
- 	puts "#{row["timestamp"]}\t#{row["cid"]}\t#{row["sig_sid"]}\t#{row["INET_NTOA(fiptmp.ip_src)"]}\t#{row["INET_NTOA(fiptmp.ip_dst)"]}\t#{row["sig_name"]}\n"
+ 	puts "#{row["timestamp"]}\t#{row["cid"]}\t#{row["sig_sid"]}\t#{row["INET_NTOA(#{table}.ip_src)"]}\t#{row["INET_NTOA(#{table}.ip_dst)"]}\t#{row["sig_name"]}\n"
 end
 
-sql = %Q|DROP TABLE fiptmp;|
+sql = %Q|DROP TABLE #{table};|
 dbc.query(sql)
