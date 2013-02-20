@@ -4,7 +4,7 @@
 # Mike Patterson <mike.patterson@uwaterloo.ca> in his guise as an ISS staff member at uWaterloo
 # 24 September 2012 
 
-require 'snort_report'
+require '/home/cjshi/snort_report.rb'
 require 'mysql2'
 require 'optparse'
 
@@ -53,7 +53,9 @@ end
 
 gsids = Array.new # Array to hold each of our yummy valuable SIDs
 
-KGSIDFile = "GoodSIDList" # variable assignment so later I can add code to make this a CLI arg
+KGSIDFile = Snort_report.path
+
+# variable assignment so later I can add code to make this a CLI arg
 begin
 	SIDF = File.open(KGSIDFile,"r")
 	while (line = SIDF.gets)
