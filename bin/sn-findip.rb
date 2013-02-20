@@ -4,7 +4,7 @@
 # Mike Patterson <mike.patterson@uwaterloo.ca> in his guise as an ISS staff member at uWaterloo
 # 21 September 2012
 
-require '/home/cjshi/snort_report.rb'
+require 'snort_report.rb'
 require 'mysql2'
 require 'optparse'
 require 'securerandom'
