@@ -5,7 +5,7 @@
 # 25 September 2012 
 # Optional arguments - a date value YYYY-[mm]-[dd]
 
-require '/home/cjshi/snort_report.rb'
+require 'snort_report.rb'
 require 'mysql2'
 require 'optparse'
 require 'securerandom'
