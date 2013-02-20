@@ -5,9 +5,10 @@
 # 25 September 2012 
 # Optional arguments - a date value YYYY-[mm]-[dd]
 
-require 'snort_report'
+require '/home/cjshi/snort_report.rb'
 require 'mysql2'
 require 'optparse'
+require 'securerandom'
 
 options = {}
 
@@ -66,15 +67,20 @@ if(debug > 0)
 	end
 end
 
+#randomly create an sequence number for temp table
+num = SecureRandom.base64
+table = "sr_osshtmp_" + num
+table = table.gsub(/[^0-9A-Za-z_]/, '')
+
 # Create a temp table, dirtier but easier than a subselect
 #  for now?
-sql = %Q|CREATE TABLE IF NOT EXISTS sr_osshtmp (cid int(10) unsigned PRIMARY KEY, timestamp datetime);|
+sql = %Q|CREATE TABLE IF NOT EXISTS #{table} (cid int(10) unsigned PRIMARY KEY, timestamp datetime);|
 begin
 	dbc.query(sql)
 rescue Mysql2::Error
 	abort("#{sql} query died, message was\n#{$!}\n")
 end
-$sql = %Q|DELETE FROM sr_osshtmp;|
+$sql = %Q|DELETE FROM #{table};|
 begin
 	dbc.query(sql)
 rescue
@@ -87,7 +93,7 @@ rids.each(:as => :array) do |rid|
 		puts "rids counter is #{dcount}"
 	end
 	# select the timestamp here to save us a later join
-	sql = %Q|INSERT INTO sr_osshtmp (cid,timestamp) SELECT cid,timestamp FROM event WHERE event.signature = #{rid[0]}
+	sql = %Q|INSERT INTO #{table} (cid,timestamp) SELECT cid,timestamp FROM event WHERE event.signature = #{rid[0]}
 	AND event.timestamp LIKE '#{daycheck}%';|
 	if(debug > 1)
 		puts "SQL for result IDs\n"
@@ -101,11 +107,11 @@ rids.each(:as => :array) do |rid|
 	dcount += 1
 end
 
-# Now we have all the cids and their timestamps in the table sr_osshtmp.
+# Now we have all the cids and their timestamps in the table #{table}.
 
 sql = %Q|SELECT INET_NTOA(ip_src) AS sip,INET_NTOA(ip_dst) AS dip,timestamp
-FROM iphdr JOIN sr_osshtmp ON iphdr.cid = sr_osshtmp.cid
-WHERE iphdr.cid IN (SELECT cid FROM sr_osshtmp)
+FROM iphdr JOIN #{table} ON iphdr.cid = #{table}.cid
+WHERE iphdr.cid IN (SELECT cid FROM #{table})
 ORDER BY timestamp;|
 begin
 	results = dbc.query(sql)
@@ -117,7 +123,7 @@ results.each do |row|
 	puts %Q|"#{row["sip"]}","#{row["dip"]}","#{row["timestamp"]}"|
 end
 
-sql = %Q|DROP TABLE sr_osshtmp;|
+sql = %Q|DROP TABLE #{table};|
 begin
 	dbc.query(sql)
 rescue Mysql2::Error
