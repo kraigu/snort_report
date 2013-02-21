@@ -13,11 +13,11 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
 		options[:filename] = file	
 	end
 	options[:sdate] = false
-	opts.on('-d','--date NUM',"Searching data on the date or default to now") do |date|
+	opts.on('-d','--date NUM',"Date to search for, defaults to today. Format [YYYY][-MM][-DD]") do |date|
 		options[:sdate] = date
 	end	
 	options[:verbose] = 0
@@ -48,12 +48,14 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
 end
 
 gsids = Array.new # Array to hold each of our yummy valuable SIDs
 
-KGSIDFile = "GoodSIDList" # variable assignment so later I can add code to make this a CLI arg
+KGSIDFile = Snort_report.path
+
+# variable assignment so later I can add code to make this a CLI arg
 begin
 	SIDF = File.open(KGSIDFile,"r")
 	while (line = SIDF.gets)
