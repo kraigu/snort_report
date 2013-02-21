@@ -13,11 +13,11 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
 		options[:filename] = file	
 	end
 	options[:seq] = false
-	opts.on('-d','--sequence NUM',"Sequence Number ") do |s|
+	opts.on('-s','--sequence NUM',"Sequence Number for which to search") do |s|
 		options[:seq] = s
 	end	
 	options[:verbose] = 0
@@ -42,7 +42,7 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
 end
 
 pdata = Hash.new
