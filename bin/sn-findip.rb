@@ -14,11 +14,11 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
 		options[:filename] = file	
 	end
 	options[:ipaddress] = false
-	opts.on('-i','--IP NUM',"Searching for the IP address") do |ip|
+	opts.on('-i','--IP NUM',"IP address for which to search (mandatory)") do |ip|
 		options[:ipaddress] = ip
 	end
 	options[:time] = false
@@ -47,7 +47,7 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
 end
 
 if(!(options[:ipaddress]))

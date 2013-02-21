@@ -11,7 +11,7 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file") do |file|
+	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
 		options[:filename] = file
 	end
 	opts.on('-h','--help') do
@@ -30,7 +30,7 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
 end
 
 stime = DateTime.now
@@ -50,4 +50,3 @@ end
 etime = DateTime.now
 
 puts "Started:\t#{stime}\nConnected:\t#{ctime}\nEnded:\t\t#{etime}"
-

@@ -4,7 +4,7 @@
 # Mike Patterson <mike.patterson@uwaterloo.ca> in his guise as an ISS staff member at uWaterloo
 # 24 September 2012 
 
-require 'snort_report.rb'
+require 'snort_report'
 require 'mysql2'
 require 'optparse'
 
@@ -13,11 +13,11 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
 		options[:filename] = file	
 	end
 	options[:sdate] = false
-	opts.on('-d','--date NUM',"Searching data on the date or default to now") do |date|
+	opts.on('-d','--date NUM',"Date to search for, defaults to today. Format [YYYY][-MM][-DD]") do |date|
 		options[:sdate] = date
 	end	
 	options[:verbose] = 0
@@ -48,7 +48,7 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
 end
 
 gsids = Array.new # Array to hold each of our yummy valuable SIDs

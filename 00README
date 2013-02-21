@@ -1,7 +1,7 @@
-0.1: my first gem ever. Porting perl code over.
+0.2: my first gem ever. Porting perl code over.
 
 Author attribution to mike.patterson@uwaterloo.ca, as it's work code.
-
+Also, co-op Cheng Jie Shi cjshi@uwaterloo.ca worked on a lot of the code.
 
 =begin rdoc
 == What is this library for?

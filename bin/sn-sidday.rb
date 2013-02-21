@@ -25,15 +25,15 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:SID] = false
-	opts.on('-s','--all-SID NUM',"All SID number,follow the format GID:SID with GID as optional") do |sid|
+	opts.on('-s','--all-SID NUM',"SID to search for, format GID:SID with GID as optional (default to GID 1)") do |sid|
 		options[:SID] = sid
 	end
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
+	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
 		options[:filename] = file
 	end
 	options[:sdate] = false
-	opts.on('-d','--date NUM',"Searching data on the date or default to now") do |date|
+	opts.on('-d','--date NUM',"Date to search for, defaults to today") do |date|
 		options[:sdate] = date
 	end	
 	options[:verbose] = 0
@@ -71,7 +71,7 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
 end
 
 if(options[:sdate])
