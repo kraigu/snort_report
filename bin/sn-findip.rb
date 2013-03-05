@@ -14,16 +14,20 @@ options = {}
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
 	options[:filename] = nil
-	opts.on('-f','--filename FILE',"Configuration file path (default ~/.srrc)") do |file|
+	opts.on('-f','--filename FILE',"Input config file or use default") do |file|
 		options[:filename] = file	
 	end
 	options[:ipaddress] = false
-	opts.on('-i','--IP NUM',"IP address for which to search (mandatory)") do |ip|
+	opts.on('-i','--IP NUM',"Searching for the IP address") do |ip|
 		options[:ipaddress] = ip
 	end
 	options[:time] = false
 	opts.on('-d','--time NUM',"checktime") do |time|
 		options[:time] = time
+	end
+	options[:ptime] = false
+	opts.on('-p','--time',"Prior 24 hours") do
+	options[:ptime] = true
 	end	
 	options[:verbose] = 0
 	opts.on('-v','--verbose NUM',Integer,"Verbosity(Debug)") do |v|
@@ -47,7 +51,7 @@ begin
         myc = Snort_report.parseconfig
     end
 rescue
-	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
+	abort("Huh, something went wrong retrieving your mysql config. Does it exist?")
 end
 
 if(!(options[:ipaddress]))
@@ -57,7 +61,12 @@ else
 end
 
 if(options[:time])
-checktime = options[:time]
+    checktime = options[:time]
+end
+if(options[:ptime])
+    pdate = DateTime.now
+    pdate -= 1
+    pdate = pdate.strftime('%Y-%m-%d %H:%M')
 end
 
 if debug > 0
@@ -72,7 +81,7 @@ dbc = Snort_report.sqlconnect(myc)
 
 #randomly create an sequence number for temp table
 num = SecureRandom.base64
-table = "sr_findiptmp_" + num
+table = "sr_osshtmp_" + num
 table = table.gsub(/[^0-9A-Za-z_]/, '')
 
 sql = %Q|CREATE TABLE IF NOT EXISTS #{table} (cid int(10) unsigned PRIMARY KEY,
@@ -112,6 +121,11 @@ JOIN #{table} on event.cid = #{table}.cid|
 if(!checktime.nil?)
 	sql = sql + %Q| WHERE event.timestamp LIKE '#{checktime}%' |
 end
+
+if(!pdate.nil?)
+	sql = sql + %Q| WHERE event.timestamp > '#{pdate}%' |
+end
+
 sql = sql + %Q| ORDER BY event.timestamp;|
 
 if debug > 0
