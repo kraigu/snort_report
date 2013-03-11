@@ -31,7 +31,7 @@ class Snort_report
 		)
 		return dbc
 		rescue
-			abort "Error connecting to SQL database, check your configuration file #{cname}"
+			abort "Error connecting to SQL database, check your configuration file"
 		end 
 	end
 	def self.path
