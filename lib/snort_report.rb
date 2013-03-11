@@ -20,6 +20,7 @@ class Snort_report
 	end
 	
 	def self.sqlconnect(myc)
+	    begin
 		dbc = Mysql2::Client.new(
 			:host => myc.get_value('client')['host'],
 			:username => myc.get_value('client')['user'],
@@ -27,14 +28,15 @@ class Snort_report
 			:database => myc.get_value('mysql')['database'],
 		)
 		return dbc
+		rescue
+		puts "Sqlconnect error, check if a config file contains all the data needed"
+		end 
 	end
-
 	def self.path
 	    myc = Snort_report.parseconfig
 	    location = myc.get_value('file')['path']
 		return location
 	end	
-
 end
 
 
