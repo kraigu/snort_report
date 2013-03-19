@@ -70,4 +70,4 @@ results.each do |row|
 	puts "#{row["SigCount"]}\t#{row["sig_gid"]}:#{row["sig_sid"]}\t#{row["sig_name"]}\n"
 end
 
-puts "Started query: #{stime}\nEnded query: #{etime}\n"
+puts "Started query: #{stime}\nEnded query: #{etime}\nDatabase: #{myc["mysql"]["database"]}\n"
