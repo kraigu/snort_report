@@ -8,10 +8,8 @@ class Snort_report
         cname = "#{o[:a]}" 
         permission = File.stat(cname).mode.to_s(8)[2..5]
 		if(permission == '0600' or permission == '0400') 
-			myc = ParseConfig.new(cname)
-			return myc
-		else
-			abort "Your configuration file #{cname} should be mode 0400 or 0600"
+		  myc = ParseConfig.new(cname)
+		  return myc
 		end
 	end
 
@@ -24,22 +22,24 @@ class Snort_report
 	def self.sqlconnect(myc)
 	    begin
 		dbc = Mysql2::Client.new(
-			:host => myc.get_value('client')['host'],
-			:username => myc.get_value('client')['user'],
-			:password => myc.get_value('client')['password'],
-			:database => myc.get_value('mysql')['database'],
+			:host => myc['client']['host'],
+			:username => myc['client']['user'],
+			:password => myc['client']['password'],
+			:database => myc['mysql']['database'],
 		)
 		return dbc
 		rescue
-			abort "Error connecting to SQL database, check your configuration file #{cname}"
+		puts "Sqlconnect error, check if a config file contains all the data needed"
 		end 
 	end
 	def self.path
 	    myc = Snort_report.parseconfig
-	    location = myc.get_value('file')['path']
+	    location = myc['file']['path']
 		return location
 	end	
 end
+
+
 
 
 
