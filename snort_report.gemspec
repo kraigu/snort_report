@@ -1,14 +1,14 @@
 Gem::Specification.new do |s|
 	s.name		= "snort_report"
-	s.version	= "0.2.3"
-	s.date		= "2013-03-11"
+	s.version	= "0.2.4"
+	s.date		= "2013-03-10"
 	s.summary	= "Snort Report"
 	s.description = "Gem to ease reporting from Snort SQL databases"
 	s.authors	= ["Mike Patterson"]
 	s.email		= 'mike.patterson@uwaterloo.ca'
 	s.files		= ["lib/snort_report.rb"]
 	s.homepage	= "https://github.com/kraigu/snort_report"
-	s.requirements << 'A functional MySQL Snort database with barnyard2 schema, mysql2 and ParseConfig gems'
+	s.requirements << 'A functional MySQL Snort database with barnyard2 schema, mysql2 and ParseConfig > 1.0 gems'
 	s.executables << 'SSHScanSum.rb'
 	s.executables << 'sn-findip.rb'
 	s.executables << 'sn-payload.rb'
