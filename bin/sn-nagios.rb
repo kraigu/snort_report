@@ -58,11 +58,7 @@ dbc = Snort_report.sqlconnect(myc)
 sql = %Q|SELECT max(timestamp) AS mts FROM event;|
 
 stime = Time.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+results = Snort_report.query(dbc, sql)
 etime = Time.now
 
 mts = Time.new

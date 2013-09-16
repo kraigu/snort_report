@@ -89,11 +89,7 @@ dbc = Snort_report.sqlconnect(myc)
 # get the internal signature IDs of the snort SID that was requested.
 # this is to save a join later.
 sql = %Q|SELECT sig_id,sig_rev,sig_name FROM signature WHERE sig_sid = #{ssid};|
-begin
-	rids = dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+rids = Snort_report.query(dbc, sql)
 if (debug > 0)
 	puts "Signature information\n"
 	rids.each(:as => :array) do |row|
@@ -109,11 +105,7 @@ sql = %Q|SELECT e.cid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst)
 if(debug > 0)
 	p sql
 end
-begin
-	results = dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+results = Snort_report.query(dbc, sql)
 
 # some machinations to make output match sn-goodsids - eventually I'll make an alert class
 # with a prettyprint method

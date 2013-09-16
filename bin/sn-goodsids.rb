@@ -110,11 +110,7 @@ gsids.each do |csid, gid|
 	sig_name as sidn,sig_rev as sidr,sig_gid as gidr
 	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid
 	WHERE s.sig_gid = #{gid} AND s.sig_sid = #{csid} AND e.timestamp LIKE '#{checkdate}%' ORDER BY timestamp;|
-	begin
-		results = dbc.query(sql)
-	rescue
-		abort("#{sql} query died")
-	end
+	results = Snort_report.query(dbc, sql)
 	results.each do |row|
 		puts "#{row["ts"]}\t#{row["cid"]}\t#{gid}:#{csid} #{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["sidn"]}"
 	end

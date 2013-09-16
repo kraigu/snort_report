@@ -38,11 +38,7 @@ dbc = Snort_report.sqlconnect(myc)
 ctime = DateTime.now
 sql = "SELECT COUNT(*) FROM event;"
 
-begin
-	results = dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+results = Snort_report.query(dbc, sql)
 
 results.each do |row|
 	puts "Event count: #{row["COUNT(*)"]}"

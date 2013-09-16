@@ -59,11 +59,7 @@ WHERE event.timestamp LIKE '#{daycheck}%'
 GROUP BY sig_name ORDER BY SigCount DESC;|
 
 stime = DateTime.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+results = Snort_report.query(dbc, sql)
 etime = DateTime.now
 
 results.each do |row|

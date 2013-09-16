@@ -63,11 +63,7 @@ if( debug > 0 )
 	puts "Protocol query is\n#{sql}\n"
 end
 stime = Time.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("IP protocol query died\n#{sql}")
-end
+results = Snort_report.query(dbc, sql)
 dtime = Time.now - stime
 if( debug > 1 )
 	puts "Protocol query took #{dtime} seconds\n"
@@ -102,11 +98,7 @@ if(debug > 0)
 	puts "Events query sql is\n#{sql}\n"
 end
 stime = Time.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("Events query died\n#{sql}")
-end
+results = Snort_report.query(dbc, sql)
 dtime = Time.now - stime
 if( debug > 1 )
 	puts "Events query took #{dtime} seconds\n"
@@ -118,11 +110,7 @@ end
 
 sql = %Q|SELECT sig_name,sig_gid,sig_sid,sig_rev FROM signature WHERE sig_id = #{pdata["esig"]};|
 stime = Time.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("Signature query died\n#{sql}")
-end
+results = Snort_report.query(dbc, sql)
 dtime = Time.now - stime
 if( debug > 1 )
 	puts "Signature query took #{dtime} seconds\n"
@@ -146,11 +134,7 @@ else
 		pdata["proto"] = "ICMP"
 end
 stime = Time.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("Ports query died\n#{sql}")
-end
+results = Snort_report.query(dbc, sql)
 dtime = Time.now - stime
 if( debug > 1 )
 	puts "Ports query took #{dtime} seconds\n"
@@ -162,11 +146,7 @@ end
 
 sql = %Q|SELECT data_payload FROM data WHERE cid = '#{snum}';|
 stime = Time.now
-begin
-	results = dbc.query(sql)
-rescue
-	abort("Payload query died\n#{sql}")
-end
+results = Snort_report.query(dbc, sql)
 dtime = Time.now - stime
 if( debug > 1 )
 	puts "Payload query took #{dtime} seconds\n"
