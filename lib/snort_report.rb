@@ -29,14 +29,23 @@ class Snort_report
 		)
 		return dbc
 		rescue
-		puts "Sqlconnect error, check if a config file contains all the data needed"
+			abort "Error connecting to SQL database, check your configuration file"
 		end 
 	end
 	def self.path
 	    myc = Snort_report.parseconfig
 	    location = myc['file']['path']
 		return location
-	end	
+	end
+	
+	def self.query(dbc, sql)
+		begin
+			results = dbc.query(sql)
+		rescue Mysql2::Error => e
+			abort("Query Failed: #{e.error}")
+		end
+		return results
+	end
 end
 
 
