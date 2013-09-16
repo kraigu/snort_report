@@ -55,11 +55,7 @@ dbc = Snort_report.sqlconnect(myc)
 # First get the internal sig_ids for the given SID. There SHOULD be only one, but you never know.
 # Store the results in an array called rids
 sql = %Q|SELECT sig_id FROM signature WHERE sig_sid = '2003068';|
-begin
-	rids = dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+rids = Snort_report.query(dbc, sql)
 if(debug > 0)
 	puts "Internal IDs for SSH outbound scan SID 2003068\n"
 	rids.each(:as => :array) do |rid|
@@ -67,25 +63,10 @@ if(debug > 0)
 	end
 end
 
-#randomly create an sequence number for temp table
-num = SecureRandom.base64
-table = "sr_osshtmp_" + num
-table = table.gsub(/[^0-9A-Za-z_]/, '')
-
 # Create a temp table, dirtier but easier than a subselect
 #  for now?
-sql = %Q|CREATE TABLE IF NOT EXISTS #{table} (cid int(10) unsigned PRIMARY KEY, timestamp datetime);|
-begin
-	dbc.query(sql)
-rescue Mysql2::Error
-	abort("#{sql} query died, message was\n#{$!}\n")
-end
-$sql = %Q|DELETE FROM #{table};|
-begin
-	dbc.query(sql)
-rescue
-	abort("#{sql} query died")
-end
+sql = %Q|CREATE TEMPORARY TABLE IF NOT EXISTS temp_table1 (cid int(10) unsigned PRIMARY KEY, timestamp datetime);|
+Snort_report.query(dbc, sql)
 
 dcount = 1
 rids.each(:as => :array) do |rid|
@@ -93,39 +74,31 @@ rids.each(:as => :array) do |rid|
 		puts "rids counter is #{dcount}"
 	end
 	# select the timestamp here to save us a later join
-	sql = %Q|INSERT INTO #{table} (cid,timestamp) SELECT cid,timestamp FROM event WHERE event.signature = #{rid[0]}
+	sql = %Q|INSERT INTO temp_table1 (cid,timestamp) SELECT cid,timestamp FROM event WHERE event.signature = #{rid[0]}
 	AND event.timestamp LIKE '#{daycheck}%';|
 	if(debug > 1)
 		puts "SQL for result IDs\n"
 		p sql
 	end
-	begin
-		dbc.query(sql)
-	rescue Mysql2::Error
-		abort("#{sql} query died, message was\n#{$!}\n")
-	end
+	Snort_report.query(dbc, sql)
 	dcount += 1
 end
 
-# Now we have all the cids and their timestamps in the table #{table}.
+# Now we have all the cids and their timestamps in the table temp_table1.
+
+#Annoyingly, mysql doesn't support a temporary table being opened twice in one query
+#so a second temporary table must be created
+sql = %Q|CREATE TEMPORARY TABLE temp_table2 (PRIMARY KEY(cid)) AS (SELECT cid FROM temp_table1);|
+Snort_report.query(dbc, sql)
 
 sql = %Q|SELECT INET_NTOA(ip_src) AS sip,INET_NTOA(ip_dst) AS dip,timestamp
-FROM iphdr JOIN #{table} ON iphdr.cid = #{table}.cid
-WHERE iphdr.cid IN (SELECT cid FROM #{table})
+FROM iphdr JOIN temp_table1 ON iphdr.cid = temp_table1.cid
+WHERE iphdr.cid IN (SELECT cid FROM temp_table2)
 ORDER BY timestamp;|
-begin
-	results = dbc.query(sql)
-rescue Mysql2::Error
-	abort("#{sql} query died, message was\n#{$!}\n")
-end
+
+results = Snort_report.query(dbc, sql)
 
 results.each do |row|
 	puts %Q|"#{row["sip"]}","#{row["dip"]}","#{row["timestamp"]}"|
 end
 
-sql = %Q|DROP TABLE #{table};|
-begin
-	dbc.query(sql)
-rescue Mysql2::Error
-	abort("#{sql} query died, message was\n#{$!}\n")
-end
