@@ -17,7 +17,7 @@ optparse = OptionParser.new do |opts|
 		options[:filename] = file	
 	end
 	options[:seq] = false
-	opts.on('-s','--sequence NUM',"Sequence Number for which to search") do |s|
+	opts.on('-s','--sequence NUM',"Sequence Number for which to search, Format sid:cid") do |s|
 		options[:seq] = s
 	end	
 	options[:verbose] = 0
@@ -54,11 +54,13 @@ else
 end
 
 pdata["seq"] = snum;
+sid = snum.split(':')[0]
+cid = snum.split(':')[1]
 
 dbc = Snort_report.sqlconnect(myc)
 
 # First find out if we need TCP, UDP, or ICMP. Get the IP addresses while we're here.
-sql = %Q|SELECT ip_proto,INET_NTOA(ip_src),INET_NTOA(ip_dst) FROM iphdr WHERE iphdr.cid = '#{snum}';|
+sql = %Q|SELECT ip_proto,INET_NTOA(ip_src),INET_NTOA(ip_dst) FROM iphdr WHERE iphdr.cid = '#{cid}' AND iphdr.sid = '#{sid}';|
 if( debug > 0 )
 	puts "Protocol query is\n#{sql}\n"
 end
@@ -93,7 +95,7 @@ end
 # So instead I'm going to copy and paste code unnecessarily in the interest of current-expediency.
 # Leave me alone, it's after 5 on a Friday.
 
-sql = %Q|SELECT timestamp,signature FROM event WHERE cid = #{snum};|
+sql = %Q|SELECT timestamp,signature FROM event WHERE cid = #{cid} AND sid = #{sid};|
 if(debug > 0)
 	puts "Events query sql is\n#{sql}\n"
 end
@@ -124,13 +126,13 @@ end
 
 pdata["proto"] = "none"
 if(proto == 17)
-        sql = %Q|SELECT udp_sport,udp_dport FROM udphdr WHERE cid = #{snum};|
+        sql = %Q|SELECT udp_sport,udp_dport FROM udphdr WHERE cid = #{cid} AND sid = #{sid};|
         pdata["proto"] = "UDP"
 elsif(proto == 6)
-        sql = %Q|SELECT tcp_sport,tcp_dport FROM tcphdr WHERE cid = #{snum};|
+        sql = %Q|SELECT tcp_sport,tcp_dport FROM tcphdr WHERE cid = #{cid} AND sid = #{sid};|
 		pdata["proto"] = "TCP"
 else
-        sql = %Q|SELECT icmp_type,icmp_code FROM icmphdr WHERE cid = #{snum};|
+        sql = %Q|SELECT icmp_type,icmp_code FROM icmphdr WHERE cid = #{cid} AND sid = #{sid};|
 		pdata["proto"] = "ICMP"
 end
 stime = Time.now
@@ -144,7 +146,7 @@ results.each(:as => :array) do |row|
 	pdata["dport"] = row[1]
 end
 
-sql = %Q|SELECT data_payload FROM data WHERE cid = '#{snum}';|
+sql = %Q|SELECT data_payload FROM data WHERE cid = '#{cid}' AND sid = '#{sid}';|
 stime = Time.now
 results = Snort_report.query(dbc, sql)
 dtime = Time.now - stime

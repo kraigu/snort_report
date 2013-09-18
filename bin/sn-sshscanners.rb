@@ -65,7 +65,7 @@ end
 
 # Create a temp table, dirtier but easier than a subselect
 #  for now?
-sql = %Q|CREATE TEMPORARY TABLE IF NOT EXISTS temp_table1 (cid int(10) unsigned PRIMARY KEY, timestamp datetime);|
+sql = %Q|CREATE TEMPORARY TABLE IF NOT EXISTS temp_table (cid int(10) unsigned, sid int(10) unsigned, timestamp datetime, PRIMARY KEY(cid,sid));|
 Snort_report.query(dbc, sql)
 
 dcount = 1
@@ -74,7 +74,7 @@ rids.each(:as => :array) do |rid|
 		puts "rids counter is #{dcount}"
 	end
 	# select the timestamp here to save us a later join
-	sql = %Q|INSERT INTO temp_table1 (cid,timestamp) SELECT cid,timestamp FROM event WHERE event.signature = #{rid[0]}
+	sql = %Q|INSERT INTO temp_table (cid,sid,timestamp) SELECT cid,sid,timestamp FROM event WHERE event.signature = #{rid[0]}
 	AND event.timestamp LIKE '#{daycheck}%';|
 	if(debug > 1)
 		puts "SQL for result IDs\n"
@@ -86,14 +86,8 @@ end
 
 # Now we have all the cids and their timestamps in the table temp_table1.
 
-#Annoyingly, mysql doesn't support a temporary table being opened twice in one query
-#so a second temporary table must be created
-sql = %Q|CREATE TEMPORARY TABLE temp_table2 (PRIMARY KEY(cid)) AS (SELECT cid FROM temp_table1);|
-Snort_report.query(dbc, sql)
-
 sql = %Q|SELECT INET_NTOA(ip_src) AS sip,INET_NTOA(ip_dst) AS dip,timestamp
-FROM iphdr JOIN temp_table1 ON iphdr.cid = temp_table1.cid
-WHERE iphdr.cid IN (SELECT cid FROM temp_table2)
+FROM iphdr JOIN temp_table ON iphdr.cid = temp_table.cid AND iphdr.sid = temp_table.sid
 ORDER BY timestamp;|
 
 results = Snort_report.query(dbc, sql)

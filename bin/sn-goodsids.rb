@@ -106,12 +106,12 @@ end
 dbc = Snort_report.sqlconnect(myc)
 
 gsids.each do |csid, gid|
-	sql = %Q|SELECT e.cid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
+	sql = %Q|SELECT e.cid,e.sid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
 	sig_name as sidn,sig_rev as sidr,sig_gid as gidr
-	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid
+	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid AND i.sid = e.sid
 	WHERE s.sig_gid = #{gid} AND s.sig_sid = #{csid} AND e.timestamp LIKE '#{checkdate}%' ORDER BY timestamp;|
 	results = Snort_report.query(dbc, sql)
 	results.each do |row|
-		puts "#{row["ts"]}\t#{row["cid"]}\t#{gid}:#{csid} #{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["sidn"]}"
+		puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{gid}:#{csid} #{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["sidn"]}"
 	end
 end

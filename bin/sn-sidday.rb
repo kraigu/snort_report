@@ -97,9 +97,9 @@ if (debug > 0)
 	end
 end
 
-sql = %Q|SELECT e.cid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
+sql = %Q|SELECT e.cid as cid,e.sid as sid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
 	sig_name as sidn,sig_rev as sidr,sig_gid as gidr 
-	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid
+	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid AND i.sid = e.sid
 	WHERE s.sig_gid = #{gid} AND s.sig_sid = #{ssid} AND e.timestamp LIKE '#{sdate}%' ORDER BY timestamp;|
 
 if(debug > 0)
@@ -109,6 +109,6 @@ results = Snort_report.query(dbc, sql)
 
 # some machinations to make output match sn-goodsids - eventually I'll make an alert class
 # with a prettyprint method
-results.each(:as => :array) do |row|
-	puts "#{row[1]}\t#{row[0]}\t#{ssid}\t#{row[5]}\t#{row[2]}\t#{row[3]}\t#{row[6]}"
+results.each do |row|
+	puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{ssid}\t#{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["gidr"]}"
 end

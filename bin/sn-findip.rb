@@ -81,9 +81,9 @@ dbc = Snort_report.sqlconnect(myc)
 
 #randomly create an sequence number for temp table
 
-sql = %Q|CREATE TEMPORARY TABLE IF NOT EXISTS temp_table (PRIMARY KEY(cid)) ENGINE=MEMORY
+sql = %Q|CREATE TEMPORARY TABLE IF NOT EXISTS temp_table (PRIMARY KEY(cid, sid)) ENGINE=MEMORY
 AS(
-	SELECT cid, ip_src, ip_dst
+	SELECT cid, sid, ip_src, ip_dst
 	FROM iphdr WHERE ip_src = INET_ATON('#{sip}') OR ip_dst = INET_ATON('#{sip}')
 );|
 
@@ -93,10 +93,10 @@ end
 
 Snort_report.query(dbc, sql)
 
-sql = %Q|SELECT event.cid,event.timestamp,signature.sig_sid,signature.sig_name,
+sql = %Q|SELECT event.cid,event.sid,event.timestamp,signature.sig_sid,signature.sig_name,
 INET_NTOA(temp_table.ip_src),INET_NTOA(temp_table.ip_dst)
 FROM event JOIN signature on event.signature = signature.sig_id
-JOIN temp_table on event.cid = temp_table.cid|
+JOIN temp_table on event.cid = temp_table.cid AND event.sid = temp_table.sid|
 
 if(!checktime.nil?)
 	sql = sql + %Q| WHERE event.timestamp LIKE '#{checktime}%' |
@@ -117,5 +117,5 @@ results = Snort_report.query(dbc, sql)
 # want the print order to be timestamp, sequence, sid, source ip, dest ip, message text
 headers = results.fields
 results.each do |row|
- 	puts "#{row["timestamp"]}\t#{row["cid"]}\t#{row["sig_sid"]}\t#{row["INET_NTOA(temp_table.ip_src)"]}\t#{row["INET_NTOA(temp_table.ip_dst)"]}\t#{row["sig_name"]}\n"
+ 	puts "#{row["timestamp"]}\t#{row["sid"]}:#{row["cid"]}\t#{row["sig_sid"]}\t#{row["INET_NTOA(temp_table.ip_src)"]}\t#{row["INET_NTOA(temp_table.ip_dst)"]}\t#{row["sig_name"]}\n"
 end
