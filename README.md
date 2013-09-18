@@ -26,3 +26,9 @@ GoodSIDList
 	sid # comment
 
 It doesn't support more than a single SID per line. Currently it assumes GID = 1.
+
+Credits
+=======
+Mike Patterson - primary author
+Cheng Shi - co-op, Spring 2013
+Davidson Marshall - co-op, Fall 2013
