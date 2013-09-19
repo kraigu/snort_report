@@ -110,5 +110,5 @@ results = Snort_report.query(dbc, sql)
 # some machinations to make output match sn-goodsids - eventually I'll make an alert class
 # with a prettyprint method
 results.each do |row|
-	puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{ssid}\t#{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["gidr"]}"
+	puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{row["gidr"]}:#{ssid} #{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["sidn"]}"
 end
