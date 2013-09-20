@@ -12,6 +12,10 @@ options = {}
 
 optparse = OptionParser.new do |opts|
 	opts.banner = "Usage:"
+	options[:filename] = nil
+	opts.on('-f','--filename FILE',"Input config file") do |file|
+		options[:filename] = file
+	end
 	options[:SID] = false
 	opts.on('-s','--all-SID NUM',"SID to search for, format GID:SID with GID as optional (default to GID 1)") do |sid|
 		options[:SID] = sid
@@ -33,6 +37,17 @@ end
 optparse.parse!
 
 debug = options[:verbose]
+
+begin
+	if(options[:filename])
+		file = options[:filename]
+		myc = Snort_report.parseconfig(:a => file)
+	else
+		myc = Snort_report.parseconfig
+	end
+rescue
+	abort("Huh, something went wrong retrieving your configuration file. Does it exist?")
+end
 
 if(options[:sdate])
 	checkdate = options[:sdate]
