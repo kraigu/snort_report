@@ -110,5 +110,21 @@ results = Snort_report.query(dbc, sql)
 # some machinations to make output match sn-goodsids - eventually I'll make an alert class
 # with a prettyprint method
 results.each do |row|
-	puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{row["gidr"]}:#{ssid} #{row["sidr"]}\t#{row["ips"]}\t#{row["ipd"]}\t#{row["sidn"]}"
+	sport = 0
+	dport = 0
+	if(row["ip_proto"] == 17)
+		sql = %Q|SELECT udp_sport as sport,udp_dport as dport FROM udphdr WHERE cid = #{row["cid"]} AND sid = #{row["sid"]};|
+	elsif(row["ip_proto"] == 6)
+		sql = %Q|SELECT tcp_sport as sport,tcp_dport as dport FROM tcphdr WHERE cid = #{row["cid"]} AND sid = #{row["sid"]};|
+	elsif(row["ip_proto"] == 1)
+		sql = %Q|SELECT icmp_type as sport,icmp_code as dport FROM icmphdr WHERE cid = #{row["cid"]} AND sid = #{row["sid"]};|
+	else
+		abort("Bad protocol #{row["ip_proto"]}")
+	end
+	Snort_report.query(dbc, sql).each do |ports|
+		sport = ports["sport"]
+		dport = ports["dport"]
+	end
+	
+	puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{row["gidr"]}:#{ssid} #{row["sidr"]}\t#{row["ips"]}\t#{sport}\t#{row["ipd"]}\t#{dport}\t#{row["sidn"]}"
 end
