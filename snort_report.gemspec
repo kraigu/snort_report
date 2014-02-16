@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
 	s.name		= "snort_report"
-	s.version	= "0.2.7"
-	s.date		= "2013-09-18"
+	s.version	= "0.2.8"
+	s.date		= "2014-02-16"
 	s.summary	= "Snort Report"
 	s.description = "Gem to ease reporting from Snort SQL databases"
 	s.authors	= ["Mike Patterson"]
