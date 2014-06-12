@@ -1,20 +1,8 @@
 #!/usr/bin/env ruby
 
-# Port of perl script SnortGetSIDDay to Ruby
 # Mike Patterson <mike.patterson@uwaterloo.ca> in his guise as an ISS staff member at uWaterloo
 # 24 September 2012 
-
-# Comments also ported...
-# Should be able to get rid of the gsdtmp table altogether
-# the string comparison on the datetime thing is horrible
-# 
-# 16:10 <[> http://stackoverflow.com/questions/2758486/mysql-compare-date-string-with-string-from-datetime-field
-# 16:10 <[> so use DATE_FORMAT?
-# 16:10 <[> but then I need to parse the argument to see if I've been passed a 
-#           year, a year-month, or a year-month-day
-# This version fixes a long-standing bug, wherein a given SID might have multiple revisions...
-# Another bug: I assume gid = 1. In situations where there is duplication of sids amongst differing gids,
-#  behaviour is undefined but probably bad.
+# Revisions since by ISS co-ops Cheng Ji Shi and Davidson Marshall
 
 require 'snort_report.rb'
 require 'mysql2'
@@ -98,7 +86,7 @@ if (debug > 0)
 end
 
 sql = %Q|SELECT e.cid as cid,e.sid as sid,timestamp as ts,INET_NTOA(ip_src) as ips,INET_NTOA(ip_dst) as ipd,
-	sig_name as sidn,sig_rev as sidr,sig_gid as gidr 
+	sig_name as sidn,sig_rev as sidr,sig_gid as gidr,i.ip_proto 
 	FROM event e JOIN signature s ON e.signature = s.sig_id JOIN iphdr i ON i.cid = e.cid AND i.sid = e.sid
 	WHERE s.sig_gid = #{gid} AND s.sig_sid = #{ssid} AND e.timestamp LIKE '#{sdate}%' ORDER BY timestamp;|
 
@@ -119,7 +107,7 @@ results.each do |row|
 	elsif(row["ip_proto"] == 1)
 		sql = %Q|SELECT icmp_type as sport,icmp_code as dport FROM icmphdr WHERE cid = #{row["cid"]} AND sid = #{row["sid"]};|
 	else
-		abort("Bad protocol #{row["ip_proto"]}")
+		abort("Bad protocol #{row.inspect}")
 	end
 	Snort_report.query(dbc, sql).each do |ports|
 		sport = ports["sport"]
