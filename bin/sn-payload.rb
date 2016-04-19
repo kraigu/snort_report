@@ -81,9 +81,9 @@ if debug > 0
 	puts "Protocol was #{proto}"
 end
 
-if (!( (proto == 1) || (proto == 6) || (proto == 17) ) )
-	abort("Bad protocol #{proto}")
-end
+# if (!( (proto == 1) || (proto == 6) || (proto == 17) ) )
+# 	abort("Bad protocol #{proto}")
+# end
 
 # Now get the actual data. Start setting up common parts.
 # This used to be a massive JOIN:
@@ -124,37 +124,42 @@ results.each(:as => :array) do |row|
 	pdata["srev"] = row[3]
 end	
 
-pdata["proto"] = "none"
+pdata["proto"] = "other"
 if(proto == 17)
         sql = %Q|SELECT udp_sport,udp_dport FROM udphdr WHERE cid = #{cid} AND sid = #{sid};|
         pdata["proto"] = "UDP"
 elsif(proto == 6)
         sql = %Q|SELECT tcp_sport,tcp_dport FROM tcphdr WHERE cid = #{cid} AND sid = #{sid};|
 		pdata["proto"] = "TCP"
-else
+elsif(proto == 1)
         sql = %Q|SELECT icmp_type,icmp_code FROM icmphdr WHERE cid = #{cid} AND sid = #{sid};|
 		pdata["proto"] = "ICMP"
 end
-stime = Time.now
-results = Snort_report.query(dbc, sql)
-dtime = Time.now - stime
-if( debug > 1 )
-	puts "Ports query took #{dtime} seconds\n"
-end
-results.each(:as => :array) do |row|
-	pdata["sport"] = row[0]
-	pdata["dport"] = row[1]
-end
 
-sql = %Q|SELECT data_payload FROM data WHERE cid = '#{cid}' AND sid = '#{sid}';|
-stime = Time.now
-results = Snort_report.query(dbc, sql)
-dtime = Time.now - stime
-if( debug > 1 )
-	puts "Payload query took #{dtime} seconds\n"
-end
-results.each(:as => :array) do |row|
-	pdata["payload"] = row[0].scan(/../).map { |pair| pair.hex.chr }.join
+if ( (proto == 1) || (proto == 6) || (proto == 17) )
+	stime = Time.now
+	results = Snort_report.query(dbc, sql)
+	dtime = Time.now - stime
+	if( debug > 1 )
+		puts "Ports query took #{dtime} seconds\n"
+	end
+	results.each(:as => :array) do |row|
+		pdata["sport"] = row[0]
+		pdata["dport"] = row[1]
+	end
+
+	sql = %Q|SELECT data_payload FROM data WHERE cid = '#{cid}' AND sid = '#{sid}';|
+	stime = Time.now
+	results = Snort_report.query(dbc, sql)
+	dtime = Time.now - stime
+	if( debug > 1 )
+		puts "Payload query took #{dtime} seconds\n"
+	end
+	results.each(:as => :array) do |row|
+		pdata["payload"] = row[0].scan(/../).map { |pair| pair.hex.chr }.join
+	end
+else
+	pdata["payload"] = '<Nil>'
 end
 
 puts "Sequence: #{pdata["seq"]}\n"
