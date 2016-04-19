@@ -106,13 +106,11 @@ results.each do |row|
 		sql = %Q|SELECT tcp_sport as sport,tcp_dport as dport FROM tcphdr WHERE cid = #{row["cid"]} AND sid = #{row["sid"]};|
 	elsif(row["ip_proto"] == 1)
 		sql = %Q|SELECT icmp_type as sport,icmp_code as dport FROM icmphdr WHERE cid = #{row["cid"]} AND sid = #{row["sid"]};|
-	else
-		abort("Bad protocol #{row.inspect}")
 	end
 	Snort_report.query(dbc, sql).each do |ports|
 		sport = ports["sport"]
 		dport = ports["dport"]
 	end
 	
-	puts "#{row["ts"]}\t#{row["sid"]}:#{row["cid"]}\t#{row["gidr"]}:#{ssid} #{row["sidr"]}\t#{row["ips"]}\t#{sport}\t#{row["ipd"]}\t#{dport}\t#{row["sidn"]}"
+	puts "#{row["ts"]}\t#{row["ip_proto"]}\t#{row["sid"]}:#{row["cid"]}\t#{row["gidr"]}:#{ssid} #{row["sidr"]}\t#{row["ips"]}\t#{sport}\t#{row["ipd"]}\t#{dport}\t#{row["sidn"]}"
 end
